@@ -60,7 +60,7 @@ jobs:
           docker push ${{ vars.DOCKER_USERNAME }}/multi-server:${{ github.sha }}
           docker push ${{ vars.DOCKER_USERNAME }}/multi-worker:${{ github.sha }}
 
-      - id: 'auth'
+      -
         name: 'Google Cloud auth'
         uses: 'google-github-actions/auth@v1'
           with:
