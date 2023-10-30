@@ -46,6 +46,12 @@ jobs:
       #   uses: docker/build-push-action
       #   with: 
       #     context: ./client
+      -
+        name: 'Google Cloud auth'
+        uses: 'google-github-actions/auth@v1'
+          with:
+            credentials_json: ${{ secrets.GC_JSON }}
+
 
       -
         name: Build and push all for deploy
@@ -59,12 +65,6 @@ jobs:
           docker push ${{ vars.DOCKER_USERNAME }}/multi-client:${{ github.sha }}
           docker push ${{ vars.DOCKER_USERNAME }}/multi-server:${{ github.sha }}
           docker push ${{ vars.DOCKER_USERNAME }}/multi-worker:${{ github.sha }}
-
-      -
-        name: 'Google Cloud auth'
-        uses: 'google-github-actions/auth@v1'
-          with:
-            credentials_json: ${{ secrets.GC_JSON }}
 
       - name: 'Set up Cloud SDK'
         uses: 'google-github-actions/setup-gcloud@v1'
