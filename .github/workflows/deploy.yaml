@@ -48,9 +48,9 @@ jobs:
       #     context: ./client
       -
         name: Google Cloud auth
-        uses: google-github-actions/auth@v1
+        uses: 'google-github-actions/auth@v1'
           with:
-            credentials_json: ${{ secrets.GC_JSON }}
+            credentials_json: '${{ secrets.GC_JSON }}'
 
 
       -
