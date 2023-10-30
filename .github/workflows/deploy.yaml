@@ -47,8 +47,8 @@ jobs:
       #   with: 
       #     context: ./client
 
-
-      - name: Build and push all for deploy
+      -
+        name: Build and push all for deploy
         run: |
           docker build -t ${{ vars.DOCKER_USERNAME }}/multi-client -t ${{ vars.DOCKER_USERNAME }}/multi-client:${{ github.sha }} ./client
           docker build -t ${{ vars.DOCKER_USERNAME }}/multi-server -t ${{ vars.DOCKER_USERNAME }}/multi-server:${{ github.sha }} ./server
