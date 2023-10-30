@@ -1,0 +1,114 @@
+name: K8s Multi
+on:
+  push:
+    branches:
+      - master
+   # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v4
+      - 
+        # create and boot a builder
+        name: setup Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      -
+        name: docker login action
+        # env:
+        #   DOCKER_USERNAME: ${{ vars.DOCKER_USERNAME }}
+        #   DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        uses: docker/login-action@v2
+        with:
+          username: ${{ vars.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+#      - 
+#        name: docker login
+#        run: docker login -u ${{ vars.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: docker build client for test
+        run: >
+          docker build
+          -t ${{ vars.DOCKER_USERNAME }}/multi-client-test
+          -f ./client/Dockerfile.dev ./client
+      -
+        name: docker run client test
+        run: >
+          docker run -e CI=true
+          ${{ vars.DOCKER_USERNAME }}/multi-client-test npm test
+
+      # -
+      #   name: Client build and push
+      #   uses: docker/build-push-action
+      #   with: 
+      #     context: ./client
+
+
+      - name: Build and push all for deploy
+        run: |
+          docker build -t ${{ vars.DOCKER_USERNAME }}/multi-client -t ${{ vars.DOCKER_USERNAME }}/multi-client:${{ github.sha }} ./client
+          docker build -t ${{ vars.DOCKER_USERNAME }}/multi-server -t ${{ vars.DOCKER_USERNAME }}/multi-server:${{ github.sha }} ./server
+          docker build -t ${{ vars.DOCKER_USERNAME }}/multi-worker -t ${{ vars.DOCKER_USERNAME }}/multi-worker:${{ github.sha }} ./worker
+          docker push ${{ vars.DOCKER_USERNAME }}/multi-client:latest
+          docker push ${{ vars.DOCKER_USERNAME }}/multi-server:latest
+          docker push ${{ vars.DOCKER_USERNAME }}/multi-worker:latest
+          docker push ${{ vars.DOCKER_USERNAME }}/multi-client:${{ github.sha }}
+          docker push ${{ vars.DOCKER_USERNAME }}/multi-server:${{ github.sha }}
+          docker push ${{ vars.DOCKER_USERNAME }}/multi-worker:${{ github.sha }}
+
+      - id: 'auth'
+        name: 'Google Cloud auth'
+        uses: 'google-github-actions/auth@v1'
+          with:
+            credentials_json: ${{ secrets.GC_JSON }}
+
+      - name: 'Set up Cloud SDK'
+        uses: 'google-github-actions/setup-gcloud@v1'
+        with:
+          version: '>= 363.0.0'
+      - name: Set Project
+        uses: google-github-actions/setup-gcloud@v0
+        with:
+          project_id:       - name: Set Project
+        uses: google-github-actions/setup-gcloud@v0
+        with:
+          project_id: multi-k8s-gc-403417
+      - name: Auth
+        run: |-
+          gcloud --quiet auth configure-docker
+
+      - name: Get Credentials
+        uses: google-github-actions/get-gke-credentials@v0
+        with:
+          cluster_name: multi-cluster
+          location: us-central1-c
+
+      - name: Apply
+        run: |-
+          kubectl apply -f k8s
+          kubectl set image deployments/server-deployment server=${{ vars.DOCKER_USERNAME }}/multi-server:${{ github.sha }}
+          kubectl set image deployments/client-deployment client=${{ vars.DOCKER_USERNAME }}/multi-client:${{ github.sha }}
+          kubectl set image deployments/worker-deployment worker=${{ vars.DOCKER_USERNAME }}/multi-worder:${{ github.sha }}
+
+
+
+
+#      - name: Generate deployment package
+
+#        run: zip -r deploy.zip . -x '*.git*'
+
+#      - name: Deploy to EB
+#        uses: einaregilsson/beanstalk-deploy@v18
+#        with:
+#          aws_access_key: "${{ secrets.AWS_ACCESS_KEY }}"
+#          aws_secret_key: "${{ secrets.AWS_SECRET_KEY }}"
+#          application_name: Multi-docker-EB
+#          environment_name: Multi-docker-EB-env
+#          existing_bucket_name: "elasticbeanstalk-us-west-1-565295202784"
+#          region: us-west-1
+#          version_label: ${{ github.sha }}
+#          deployment_package: deploy.zip
