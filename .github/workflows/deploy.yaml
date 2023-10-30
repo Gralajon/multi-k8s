@@ -26,9 +26,23 @@ jobs:
         with:
           username: ${{ vars.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-#      - 
-#        name: docker login
-#        run: docker login -u ${{ vars.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: 'Set up Cloud SDK'
+        uses: 'google-github-actions/setup-gcloud@v1'
+        with:
+          version: '>= 363.0.0'
+
+      -
+        name: Google Cloud auth
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: '${{ secrets.GC_JSON }}'
+
+      - name: Set Project
+        uses: google-github-actions/setup-gcloud@v0
+        with:
+          project_id: multi-k8s-gc-403417
+
       - name: Auth
         run: |-
           gcloud --quiet auth configure-docker
@@ -38,7 +52,6 @@ jobs:
         with:
           cluster_name: multi-cluster
           location: us-central1-c
-
 
       - name: docker build client for test
         run: >
@@ -63,31 +76,6 @@ jobs:
           docker push ${{ vars.DOCKER_USERNAME }}/multi-client:${{ github.sha }}
           docker push ${{ vars.DOCKER_USERNAME }}/multi-server:${{ github.sha }}
           docker push ${{ vars.DOCKER_USERNAME }}/multi-worker:${{ github.sha }}
-
-      - name: 'Set up Cloud SDK'
-        uses: 'google-github-actions/setup-gcloud@v1'
-        with:
-          version: '>= 363.0.0'
-      -
-        name: Google Cloud auth
-        uses: google-github-actions/auth@v1
-        with:
-          credentials_json: '${{ secrets.GC_JSON }}'
-
-      - name: Set Project
-        uses: google-github-actions/setup-gcloud@v0
-        with:
-          project_id: multi-k8s-gc-403417
-
-      - name: Auth
-        run: |-
-          gcloud --quiet auth configure-docker
-
-      - name: Get Credentials
-        uses: google-github-actions/get-gke-credentials@v0
-        with:
-          cluster_name: multi-cluster
-          location: us-central1-c
 
       - name: Apply
         run: |-
