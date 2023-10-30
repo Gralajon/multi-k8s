@@ -29,6 +29,16 @@ jobs:
 #      - 
 #        name: docker login
 #        run: docker login -u ${{ vars.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+      - name: Auth
+        run: |-
+          gcloud --quiet auth configure-docker
+
+      - name: Get Credentials
+        uses: google-github-actions/get-gke-credentials@v0
+        with:
+          cluster_name: multi-cluster
+          location: us-central1-c
+
 
       - name: docker build client for test
         run: >
@@ -84,7 +94,7 @@ jobs:
           kubectl apply -f k8s
           kubectl set image deployments/server-deployment server=${{ vars.DOCKER_USERNAME }}/multi-server:${{ github.sha }}
           kubectl set image deployments/client-deployment client=${{ vars.DOCKER_USERNAME }}/multi-client:${{ github.sha }}
-          kubectl set image deployments/worker-deployment worker=${{ vars.DOCKER_USERNAME }}/multi-worder:${{ github.sha }}
+          kubectl set image deployments/worker-deployment worker=${{ vars.DOCKER_USERNAME }}/multi-worker:${{ github.sha }}
 
 
 
